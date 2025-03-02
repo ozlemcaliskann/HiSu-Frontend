@@ -1,117 +1,94 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, Button, Image, ActivityIndicator } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { auth, signInWithCredential, signOut, db } from "@/constants/firebase";
+import React, { useEffect, useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, Image, Alert } from "react-native";
+import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
-import * as WebBrowser from "expo-web-browser"; // Needed for Web-based login
-import { GoogleAuthProvider } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { getAuth, signInWithCredential, GoogleAuthProvider } from "firebase/auth";
+import { makeRedirectUri } from "expo-auth-session";
+import { auth } from "@/constants/firebase";
 
-WebBrowser.maybeCompleteAuthSession(); // Ensures smooth web login handling
+WebBrowser.maybeCompleteAuthSession();
 
 const LoginScreen = () => {
   const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const navigation = useNavigation();
+  const redirectUri = makeRedirectUri({ useProxy: true });
 
-  // ✅ Web-based Google Sign-In (No OAuth Client ID Needed)
+  console.log("🔗 Kullanılan Redirect URI:", redirectUri);
+
+
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: "792408514806-871vjikmhseqsuquuqr6hignmdiqgc4i.apps.googleusercontent.com", // Web Client ID
-    iosClientId: "792408514806-q7ufn8ugiqa9gr2v8sqm01gsuobs0vlm.apps.googleusercontent.com", // iOS Client ID
+    expoClientId: "792408514806-871vjikmhseqsuquuqr6hignmdiqgc4i.apps.googleusercontent.com",
+    iosClientId: "792408514806-q7ufn8ugiqa9gr2v8sqm01gsuobs0vlm.apps.googleusercontent.com",
+    webClientId: "792408514806-871vjikmhseqsuquuqr6hignmdiqgc4i.apps.googleusercontent.com",
+    redirectUri: makeRedirectUri({ useProxy: true }),
+   
   });
 
-  useEffect(() => {
-    checkLoginStatus();
-  }, []);
-
+  console.log("🔗 Kullanılan Redirect URI:", redirectUri);
   useEffect(() => {
     if (response?.type === "success") {
-      const { id_token } = response.authentication;
-      handleGoogleLogin(id_token);
+      console.log("✅ Google Auth Response:", response.params);
+      const { id_token } = response.params;
+
+      if (!id_token) {
+        console.error("❌ Hata: id_token bulunamadı!");
+        return;
+      }
+
+      const credential = GoogleAuthProvider.credential(id_token);
+      signInWithCredential(auth, credential)
+        .then((userCredential) => {
+          const email = userCredential.user.email;
+          if (email.endsWith("@sabanciuniv.edu")) {
+            console.log("✅ Giriş Başarılı:", userCredential.user);
+            setUser(userCredential.user);
+          } else {
+            Alert.alert("Hata", "Sadece @sabanciuniv.edu e-postaları ile giriş yapılabilir.");
+            auth.signOut();
+            setUser(null);
+          }
+        })
+        .catch((error) => console.error("Google Sign-In Error: ", error));
     }
   }, [response]);
 
-  const checkLoginStatus = async () => {
-    const storedUser = await AsyncStorage.getItem("user");
-    const storedRole = await AsyncStorage.getItem("role");
-    if (storedUser && storedRole) {
-      setUser(JSON.parse(storedUser));
-      setRole(storedRole);
-      redirectUser(storedRole);
-    }
-  };
-
-  const handleGoogleLogin = async (idToken) => {
-    setLoading(true);
-    try {
-      const credential = GoogleAuthProvider.credential(idToken);
-      const userCredential = await signInWithCredential(auth, credential);
-      const user = userCredential.user;
-      setUser(user);
-
-      // Fetch role from Firestore
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
-
-      let assignedRole = "PUBLIC";
-      if (!userSnap.exists()) {
-        const emailDomain = user.email.split("@")[1];
-        assignedRole = emailDomain === "sabanciuniv.edu" ? "PRIVATE" : "PUBLIC";
-        await setDoc(userRef, { uid: user.uid, email: user.email, role: assignedRole });
-      } else {
-        assignedRole = userSnap.data().role;
-      }
-
-      setRole(assignedRole);
-      await AsyncStorage.setItem("user", JSON.stringify(user));
-      await AsyncStorage.setItem("role", assignedRole);
-
-      redirectUser(assignedRole);
-    } catch (error) {
-      console.error("Login Failed:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const redirectUser = (role) => {
-    if (role === "PRIVATE") {
-      navigation.navigate("Dashboard");
-    } else {
-      navigation.navigate("PublicAccess");
-    }
-  };
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    await AsyncStorage.removeItem("user");
-    await AsyncStorage.removeItem("role");
-    setUser(null);
-    setRole(null);
-  };
-
   return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>Login</Text>
+    <View style={{ flex: 1, backgroundColor: "#000", justifyContent: "center", alignItems: "center" }}>
+      <View style={{ backgroundColor: "#222", padding: 30, borderRadius: 15, width: "80%", alignItems: "center" }}>
+        <Text style={{ color: "#fff", fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>Login</Text>
+        <Text style={{ color: "#aaa", fontSize: 14, marginBottom: 20 }}>Enter your email below to login to your account</Text>
+        
+        <TextInput
+          placeholder="Email"
+          placeholderTextColor="#666"
+          style={{ width: "100%", backgroundColor: "#333", color: "#fff", padding: 12, borderRadius: 8, marginBottom: 10 }}
+          editable={false}
+        />
 
-      {user ? (
-        <>
-          <Image source={{ uri: user.photoURL }} style={{ width: 100, height: 100, borderRadius: 50 }} />
-          <Text style={{ marginTop: 10 }}>{user.email}</Text>
-          <Text style={{ fontWeight: "bold", color: role === "PRIVATE" ? "green" : "blue" }}>{role} User</Text>
-          <Button title="Logout" color="red" onPress={handleLogout} />
-        </>
-      ) : (
-        <>
-          {loading ? (
-            <ActivityIndicator size="large" color="blue" />
-          ) : (
-            <Button title="Sign in with Google" onPress={() => promptAsync()} />
-          )}
-        </>
-      )}
+        <TextInput
+          placeholder="Password"
+          placeholderTextColor="#666"
+          secureTextEntry
+          style={{ width: "100%", backgroundColor: "#333", color: "#fff", padding: 12, borderRadius: 8, marginBottom: 20 }}
+          editable={false}
+        />
+
+        <TouchableOpacity style={{ width: "100%", backgroundColor: "#007AFF", padding: 12, borderRadius: 8, marginBottom: 10, alignItems: "center" }}>
+          <Text style={{ color: "#fff", fontWeight: "bold" }}>Login</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => promptAsync()}
+          style={{ width: "100%", backgroundColor: "#444", padding: 12, borderRadius: 8, alignItems: "center" }}>
+          <Text style={{ color: "#fff", fontWeight: "bold" }}>Sign in with Google</Text>
+        </TouchableOpacity>
+
+        {user && (
+          <View style={{ marginTop: 20, alignItems: "center" }}>
+            <Text style={{ color: "#fff", fontSize: 16 }}>Hoşgeldin, {user.displayName}!</Text>
+            <Image source={{ uri: user.photoURL }} style={{ width: 50, height: 50, borderRadius: 25, marginTop: 10 }} />
+          </View>
+        )}
+      </View>
     </View>
   );
 };

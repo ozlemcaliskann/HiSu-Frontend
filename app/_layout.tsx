@@ -3,11 +3,10 @@ import { Stack, router } from "expo-router";
 import { useFonts } from "expo-font";
 import { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
-import { auth, onAuthStateChanged } from "@/constants/firebase"; // ✅ Firebase Authentication
-import { User } from "firebase/auth";
+import { auth } from "@/constants/firebase"; // ✅ Firebase Authentication
+import { onAuthStateChanged, User } from "firebase/auth";
 import * as SplashScreen from "expo-splash-screen";
 
-// Splash ekranını önlemek için
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -41,9 +40,10 @@ export default function RootLayout() {
       if (!user) {
         console.log("🔄 Redirecting to login...");
         setHasNavigated(true);
-        setTimeout(() => router.replace("/login"), 100); // **Gecikme koyarak çökme önlenir**
+        setTimeout(() => router.replace("/LoginScreen"), 100); // **Gecikme koyarak çökme önlenir**
       } else {
         console.log("✅ User is logged in, staying on the main screen.");
+        SplashScreen.hideAsync(); // **Oturum açılmışsa Splash Screen kapat**
       }
     }
   }, [isCheckingAuth, fontsLoaded, user, hasNavigated]);
@@ -67,7 +67,7 @@ export default function RootLayout() {
             <Stack.Screen name="+not-found" />
           </>
         ) : (
-          <Stack.Screen name="login" options={{ headerShown: false }} />
+          <Stack.Screen name="LoginScreen" options={{ headerShown: false }} />
         )}
       </Stack>
     </ThemeProvider>
