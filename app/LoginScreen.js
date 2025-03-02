@@ -2,16 +2,13 @@ import React, { useState, useEffect } from "react";
 import { View, Text, Button, Image, ActivityIndicator } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  auth,
-  provider,
-  signInWithPopup,
-  signOut,
-  db,
-  doc,
-  getDoc,
-  setDoc,
-} from "@/constants/firebase";
+import { auth, signInWithCredential, signOut, db } from "@/constants/firebase";
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser"; // Needed for Web-based login
+import { GoogleAuthProvider } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+
+WebBrowser.maybeCompleteAuthSession(); // Ensures smooth web login handling
 
 const LoginScreen = () => {
   const [user, setUser] = useState(null);
@@ -19,9 +16,22 @@ const LoginScreen = () => {
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
 
+  // ✅ Web-based Google Sign-In (No OAuth Client ID Needed)
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId: "792408514806-871vjikmhseqsuquuqr6hignmdiqgc4i.apps.googleusercontent.com", // Web Client ID
+    iosClientId: "792408514806-q7ufn8ugiqa9gr2v8sqm01gsuobs0vlm.apps.googleusercontent.com", // iOS Client ID
+  });
+
   useEffect(() => {
     checkLoginStatus();
   }, []);
+
+  useEffect(() => {
+    if (response?.type === "success") {
+      const { id_token } = response.authentication;
+      handleGoogleLogin(id_token);
+    }
+  }, [response]);
 
   const checkLoginStatus = async () => {
     const storedUser = await AsyncStorage.getItem("user");
@@ -33,11 +43,12 @@ const LoginScreen = () => {
     }
   };
 
-  const handleLogin = async () => {
+  const handleGoogleLogin = async (idToken) => {
     setLoading(true);
     try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
+      const credential = GoogleAuthProvider.credential(idToken);
+      const userCredential = await signInWithCredential(auth, credential);
+      const user = userCredential.user;
       setUser(user);
 
       // Fetch role from Firestore
@@ -97,7 +108,7 @@ const LoginScreen = () => {
           {loading ? (
             <ActivityIndicator size="large" color="blue" />
           ) : (
-            <Button title="Sign in with Google" onPress={handleLogin} />
+            <Button title="Sign in with Google" onPress={() => promptAsync()} />
           )}
         </>
       )}
