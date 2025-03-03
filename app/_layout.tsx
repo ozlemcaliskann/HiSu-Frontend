@@ -1,5 +1,5 @@
 import { ThemeProvider, DefaultTheme } from "@react-navigation/native";
-import { Stack, router } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { useFonts } from "expo-font";
 import { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
@@ -12,15 +12,13 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   console.log("🛠️ Rendering global _layout.tsx");
 
-  // Fontları yükle
+  const router = useRouter(); // ✅ useRouter ekledik
   const [fontsLoaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
-  // Authentication durumlarını yönet
   const [user, setUser] = useState<User | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [hasNavigated, setHasNavigated] = useState(false);
 
   useEffect(() => {
     console.log("🔍 Checking Firebase authentication...");
@@ -36,17 +34,16 @@ export default function RootLayout() {
 
   // **🚀 Kullanıcı durumu belli olduktan sonra yönlendirme**
   useEffect(() => {
-    if (!isCheckingAuth && fontsLoaded && !hasNavigated) {
-      if (!user) {
-        console.log("🔄 Redirecting to login...");
-        setHasNavigated(true);
-        setTimeout(() => router.replace("/LoginScreen"), 100); // **Gecikme koyarak çökme önlenir**
+    if (!isCheckingAuth && fontsLoaded) {
+      if (user) {
+        console.log("✅ User is logged in, redirecting to MainPage...");
+        router.replace("/MainPage"); // ✅ Kullanıcı giriş yaptıysa MainPage yönlendirmesi
       } else {
-        console.log("✅ User is logged in, staying on the main screen.");
-        SplashScreen.hideAsync(); // **Oturum açılmışsa Splash Screen kapat**
+        console.log("🔄 Redirecting to LoginScreen...");
+        router.replace("/LoginScreen"); // ✅ Kullanıcı giriş yapmamışsa LoginScreen yönlendirmesi
       }
     }
-  }, [isCheckingAuth, fontsLoaded, user, hasNavigated]);
+  }, [isCheckingAuth, fontsLoaded, user]);
 
   // **🔥 Firebase durumu yüklenene kadar beklet**
   if (!fontsLoaded || isCheckingAuth) {
@@ -61,14 +58,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={DefaultTheme}>
       <Stack>
-        {user ? (
-          <>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" />
-          </>
-        ) : (
-          <Stack.Screen name="LoginScreen" options={{ headerShown: false }} />
-        )}
+        <Stack.Screen name="LoginScreen" options={{ headerShown: false }} /> {/* ✅ İlk ekran LoginScreen olacak */}
+        <Stack.Screen name="MainPage" options={{ headerShown: false }} /> {/* ✅ Giriş başarılıysa MainPage açılacak */}
+        <Stack.Screen name="+not-found" />
       </Stack>
     </ThemeProvider>
   );
