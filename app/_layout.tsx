@@ -3,7 +3,7 @@ import { Stack, useRouter } from "expo-router";
 import { useFonts } from "expo-font";
 import { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
-import { auth } from "@/constants/firebase"; // ✅ Firebase Authentication
+import { auth } from "@/constants/firebase"; 
 import { onAuthStateChanged, User } from "firebase/auth";
 import * as SplashScreen from "expo-splash-screen";
 
@@ -12,7 +12,7 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   console.log("🛠️ Rendering global _layout.tsx");
 
-  const router = useRouter(); // ✅ useRouter ekledik
+  const router = useRouter();
   const [fontsLoaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
@@ -32,20 +32,20 @@ export default function RootLayout() {
     return () => unsubscribe();
   }, []);
 
-  // **🚀 Kullanıcı durumu belli olduktan sonra yönlendirme**
+  // 🚀 Redirect based on authentication status
   useEffect(() => {
     if (!isCheckingAuth && fontsLoaded) {
       if (user) {
         console.log("✅ User is logged in, redirecting to MainPage...");
-        router.replace("/MainPage"); // ✅ Kullanıcı giriş yaptıysa MainPage yönlendirmesi
+        router.replace("/MainPage");
       } else {
         console.log("🔄 Redirecting to LoginScreen...");
-        router.replace("/LoginScreen"); // ✅ Kullanıcı giriş yapmamışsa LoginScreen yönlendirmesi
+        router.replace("/LoginScreen");
       }
     }
   }, [isCheckingAuth, fontsLoaded, user]);
 
-  // **🔥 Firebase durumu yüklenene kadar beklet**
+  // Show loading indicator while checking auth
   if (!fontsLoaded || isCheckingAuth) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" }}>
@@ -58,9 +58,56 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={DefaultTheme}>
       <Stack>
-        <Stack.Screen name="LoginScreen" options={{ headerShown: false }} /> {/* ✅ İlk ekran LoginScreen olacak */}
-        <Stack.Screen name="MainPage" options={{ headerShown: false }} /> {/* ✅ Giriş başarılıysa MainPage açılacak */}
-        <Stack.Screen name="+not-found" />
+        <Stack.Screen name="LoginScreen" options={{ headerShown: false }} />
+        <Stack.Screen name="MainPage" options={{ headerShown: false }} />
+        
+        {/* Screen components that will be accessible from SideMenu */}
+        <Stack.Screen name="screens/AboutUs" options={{ 
+          headerShown: true,
+          headerTitle: "Hakkımızda",
+          headerBackTitle: "Geri"
+        }} />
+        <Stack.Screen name="screens/ClubActivities" options={{ 
+          headerShown: true,
+          headerTitle: "Kulüp Aktiviteleri",
+          headerBackTitle: "Geri"
+        }} />
+        <Stack.Screen name="screens/ProgramInfo" options={{ 
+          headerShown: true,
+          headerTitle: "Program Bilgileri", 
+          headerBackTitle: "Geri"
+        }} />
+        <Stack.Screen name="screens/Rankings" options={{ 
+          headerShown: true,
+          headerTitle: "Taban Puanlar ve Sıralamalar",
+          headerBackTitle: "Geri"
+        }} />
+        <Stack.Screen name="screens/Scholarships" options={{ 
+          headerShown: true,
+          headerTitle: "Burslar ve Ücretler",
+          headerBackTitle: "Geri"
+        }} />
+        
+        {/* Faculty screens */}
+        <Stack.Screen name="screens/faculties/FASS" options={{ 
+          headerShown: true,
+          headerTitle: "Sanat ve Sosyal Bilimler",
+          headerBackTitle: "Geri"
+        }} />
+        <Stack.Screen name="screens/faculties/FENS" options={{ 
+          headerShown: true,
+          headerTitle: "Mühendislik ve Doğa Bilimleri",
+          headerBackTitle: "Geri"
+        }} />
+        <Stack.Screen name="screens/faculties/FMAN" options={{ 
+          headerShown: true,
+          headerTitle: "Yönetim Bilimleri",
+          headerBackTitle: "Geri"
+        }} />
+        
+        {/* Others */}
+        <Stack.Screen name="components/CampusMap" options={{ headerShown: true }} />
+        <Stack.Screen name="+not-found" options={{ headerShown: true }} />
       </Stack>
     </ThemeProvider>
   );

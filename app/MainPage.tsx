@@ -284,6 +284,12 @@ export default function MainPage() {
     });
   };
 
+  // Navigate to different screens
+  const navigateTo = (route: string) => {
+    router.push(route as any);
+    setIsDrawerOpen(false);
+  };
+
   const DrawerContent = () => (
     <SafeAreaView style={styles.drawerContent}>
       <View style={styles.drawerHeader}>
@@ -297,40 +303,64 @@ export default function MainPage() {
       </View>
       
       <ScrollView style={styles.drawerScroll}>
-        <TouchableOpacity style={styles.drawerItem}>
+        <TouchableOpacity 
+          style={styles.drawerItem}
+          onPress={() => navigateTo('/screens/AboutUs')}
+        >
           <Ionicons name="information-circle-outline" size={24} color="#002B5C" />
           <Text style={styles.drawerText}>Hakkımızda</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.drawerItem}>
+        <TouchableOpacity 
+          style={styles.drawerItem}
+          onPress={() => navigateTo('/screens/ClubActivities')}
+        >
           <Ionicons name="people-outline" size={24} color="#002B5C" />
           <Text style={styles.drawerText}>Kulüp Aktiviteleri</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.drawerItem}>
+        <TouchableOpacity 
+          style={styles.drawerItem}
+          onPress={() => navigateTo('/screens/ProgramInfo')}
+        >
           <FontAwesome5 name="graduation-cap" size={20} color="#002B5C" />
           <Text style={styles.drawerText}>Program Bilgileri</Text>
         </TouchableOpacity>
 
         <View style={styles.facultiesSection}>
           <Text style={styles.facultiesTitle}>Fakülteler</Text>
-          <TouchableOpacity style={styles.facultyItem}>
+          <TouchableOpacity 
+            style={styles.facultyItem}
+            onPress={() => navigateTo('/screens/faculties/FENS')}
+          >
             <Text style={styles.facultyText}>Mühendislik ve Doğa Bilimleri</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.facultyItem}>
+          <TouchableOpacity 
+            style={styles.facultyItem}
+            onPress={() => navigateTo('/screens/faculties/FASS')}
+          >
             <Text style={styles.facultyText}>Sanat ve Sosyal Bilimler</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.facultyItem}>
+          <TouchableOpacity 
+            style={styles.facultyItem}
+            onPress={() => navigateTo('/screens/faculties/FMAN')}
+          >
             <Text style={styles.facultyText}>Yönetim Bilimleri</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.drawerItem}>
+        <TouchableOpacity 
+          style={styles.drawerItem}
+          onPress={() => navigateTo('/screens/Rankings')}
+        >
           <MaterialIcons name="bar-chart" size={24} color="#002B5C" />
           <Text style={styles.drawerText}>Taban Puanlar ve Sıralamalar</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.drawerItem}>
+        <TouchableOpacity 
+          style={styles.drawerItem}
+          onPress={() => navigateTo('/screens/Scholarships')}
+        >
           <MaterialIcons name="attach-money" size={24} color="#002B5C" />
           <Text style={styles.drawerText}>Burslar ve Ücretler</Text>
         </TouchableOpacity>
