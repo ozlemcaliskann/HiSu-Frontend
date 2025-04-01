@@ -1,144 +1,105 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, SafeAreaView, Linking } from 'react-native';
-import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { auth } from "@/constants/firebase";
+import { Ionicons } from '@expo/vector-icons';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/constants/firebase';
 
-interface SideMenuProps {
-  onClose: () => void;
-}
+type MenuSection = {
+  title: string;
+  items: MenuItem[];
+};
 
-export default function SideMenu({ onClose }: SideMenuProps) {
+type MenuItem = {
+  title: string;
+  icon: string;
+  route: string;
+};
+
+const SideMenu = ({ onClose }: { onClose: () => void }) => {
   const router = useRouter();
 
-  const handleLogout = () => {
-    auth.signOut().then(() => {
-      console.log("🚪 User logged out");
-      router.replace('/(auth)/LoginScreen' as any);
-    });
+  const handleNavigation = (route: "/screens/AboutUs" | "/screens/ProgramInfo" | "/screens/Rankings" | "/screens/Scholarships" | "/screens/ClubActivities" | "/screens/faculties/FASS" | "/screens/faculties/FENS") => {
+      router.push(route);
+      onClose();
   };
 
-  const navigateToScreen = (screen: string) => {
-    router.push(screen as any);
-    onClose();
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.replace('/LoginScreen');
+    } catch (error) {
+      console.error('Error signing out: ', error);
+    }
   };
 
-  const menuItems = [
+  const menuSections: MenuSection[] = [
     {
-      id: 'about',
-      icon: <Ionicons name="information-circle-outline" size={24} color="#002B5C" />,
-      title: 'Hakkımızda',
-      onPress: () => navigateToScreen('/about')
+      title: 'General',
+      items: [
+        { title: 'About Us', icon: 'information-circle-outline', route: '/screens/AboutUs' },
+        { title: 'Program Information', icon: 'school-outline', route: '/screens/ProgramInfo' },
+        { title: 'Rankings', icon: 'trophy-outline', route: '/screens/Rankings' },
+        { title: 'Scholarships', icon: 'cash-outline', route: '/screens/Scholarships' },
+        { title: 'Club Activities', icon: 'people-outline', route: '/screens/ClubActivities' },
+      ]
     },
     {
-      id: 'clubs',
-      icon: <Ionicons name="people-outline" size={24} color="#002B5C" />,
-      title: 'Kulüp Aktiviteleri',
-      onPress: () => navigateToScreen('/clubs')
+      title: 'Faculties',
+      items: [
+        { title: 'Faculty of Arts and Social Sciences', icon: 'book-outline', route: '/screens/faculties/FASS' },
+        { title: 'Faculty of Engineering and Natural Sciences', icon: 'construct-outline', route: '/screens/faculties/FENS' },
+        { title: 'Faculty of Management', icon: 'business-outline', route: '/screens/faculties/FMAN' },
+      ]
     },
-    {
-      id: 'programs',
-      icon: <FontAwesome5 name="graduation-cap" size={20} color="#002B5C" />,
-      title: 'Program Bilgileri',
-      onPress: () => navigateToScreen('/programs')
-    }
-  ];
-
-  const faculties = [
-    {
-      id: 'fens',
-      title: 'Mühendislik ve Doğa Bilimleri',
-      onPress: () => navigateToScreen('/faculties/FENS')
-    },
-    {
-      id: 'fass',
-      title: 'Sanat ve Sosyal Bilimler',
-      onPress: () => navigateToScreen('/faculties/FASS')
-    },
-    {
-      id: 'fman',
-      title: 'Yönetim Bilimleri',
-      onPress: () => navigateToScreen('/faculties/FMAN')
-    }
-  ];
-
-  const additionalItems = [
-    {
-      id: 'rankings',
-      icon: <MaterialIcons name="bar-chart" size={24} color="#002B5C" />,
-      title: 'Taban Puanlar ve Sıralamalar',
-      onPress: () => {
-        Linking.openURL('https://www.sabanciuniv.edu/tr/2023-taban-puan-siralama-2023-2024-kontenjanlar');
-        onClose();
-      }
-    },
-    {
-      id: 'scholarships',
-      icon: <MaterialIcons name="attach-money" size={24} color="#002B5C" />,
-      title: 'Burslar ve Ücretler',
-      onPress: () => {
-        Linking.openURL('https://www.sabanciuniv.edu/en/node/179');
-        onClose();
-      }
-    }
   ];
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>HiSU</Text>
-        <Text style={styles.subtitle}>Sabancı Üniversitesi</Text>
-        <Image 
-          source={require('../../assets/images/sabanci-logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </View>
-      
-      <ScrollView style={styles.scrollView}>
-        {menuItems.map(item => (
-          <TouchableOpacity
-            key={item.id}
-            style={styles.menuItem}
-            onPress={item.onPress}
-          >
-            {item.icon}
-            <Text style={styles.menuText}>{item.title}</Text>
+      <ScrollView>
+        {/* Header with User Info */}
+        <View style={styles.header}>
+          <View style={styles.userInfo}>
+            <Image 
+              source={require('@/assets/images/sabanci-logo.png')} 
+              style={styles.avatar}
+              defaultSource={require('@/assets/images/sabanci-logo.png')}
+            />
+            <Text style={styles.userName}>
+              {auth.currentUser?.displayName || auth.currentUser?.email || 'Student'}
+            </Text>
+          </View>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Ionicons name="close" size={24} color="#333" />
           </TouchableOpacity>
-        ))}
-
-        <View style={styles.facultiesSection}>
-          <Text style={styles.sectionTitle}>Fakülteler</Text>
-          {faculties.map(faculty => (
-            <TouchableOpacity
-              key={faculty.id}
-              style={styles.facultyItem}
-              onPress={faculty.onPress}
-            >
-              <Text style={styles.facultyText}>{faculty.title}</Text>
-            </TouchableOpacity>
-          ))}
         </View>
 
-        {additionalItems.map(item => (
-          <TouchableOpacity
-            key={item.id}
-            style={styles.menuItem}
-            onPress={item.onPress}
-          >
-            {item.icon}
-            <Text style={styles.menuText}>{item.title}</Text>
-          </TouchableOpacity>
+        {/* Menu Sections */}
+        {menuSections.map((section, index) => (
+          <View key={index} style={styles.section}>
+            <Text style={styles.sectionTitle}>{section.title}</Text>
+            {section.items.map((item, itemIndex) => (
+              <TouchableOpacity
+                key={itemIndex}
+                style={styles.menuItem}
+                onPress={() => handleNavigation(item.route as "/screens/AboutUs" | "/screens/ProgramInfo" | "/screens/Rankings" | "/screens/Scholarships" | "/screens/ClubActivities" | "/screens/faculties/FASS" | "/screens/faculties/FENS")}
+              >
+                <Ionicons name={item.icon as any} size={22} color="#007AFF" />
+                <Text style={styles.menuItemText}>{item.title}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         ))}
       </ScrollView>
 
+      {/* Footer with Logout */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Ionicons name="log-out-outline" size={24} color="#FF3B30" />
-        <Text style={styles.logoutText}>Çıkış Yap</Text>
+        <Ionicons name="log-out-outline" size={22} color="#FF3B30" />
+        <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -146,73 +107,68 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    backgroundColor: '#002B5C',
-    padding: 20,
-    paddingTop: 60,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eaeaea',
+  },
+  userInfo: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  title: {
-    fontSize: 32,
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  userName: {
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 5,
+    color: '#333',
   },
-  subtitle: {
-    fontSize: 18,
-    color: '#fff',
-    opacity: 0.9,
+  closeButton: {
+    padding: 4,
   },
-  logo: {
-    width: 60,
-    height: 60,
-    position: 'absolute',
-    top: 20,
-    right: 20,
+  section: {
+    marginTop: 20,
+    paddingHorizontal: 16,
   },
-  scrollView: {
-    flex: 1,
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#8e8e93',
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 8,
   },
-  menuText: {
+  menuItemText: {
+    marginLeft: 16,
     fontSize: 16,
-    color: '#002B5C',
-    marginLeft: 15,
-  },
-  facultiesSection: {
-    backgroundColor: '#F8F9FA',
-    paddingVertical: 10,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
     color: '#333',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-  },
-  facultyItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 30,
-  },
-  facultyText: {
-    fontSize: 14,
-    color: '#666',
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
+    padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: '#eaeaea',
   },
   logoutText: {
-    marginLeft: 10,
+    marginLeft: 16,
     fontSize: 16,
     color: '#FF3B30',
+    fontWeight: '500',
   },
-}); 
+});
+
+export default SideMenu;
