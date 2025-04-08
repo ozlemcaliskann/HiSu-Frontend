@@ -11,15 +11,28 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hisu.hisuapp",
+      "googleServicesFile": "./ios/GoogleService-Info.plist",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "Kampüs haritasında konumunuzu görmek için konum izni gerekiyor.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Kampüs haritasında konumunuzu görmek için konum izni gerekiyor."
+      },
+      "config": {
+        "googleMapsApiKey": "AIzaSyBTJkXnyPY9xFyYZGMhEaYt-DEbU9hfHyE"
       }
     },
     "android": {
       "package": "com.hisu.hisuapp",
+      "googleServicesFile": "./android/app/google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
+      },
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBTJkXnyPY9xFyYZGMhEaYt-DEbU9hfHyE"
+        }
       }
     },
     "web": {
@@ -41,6 +54,12 @@
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
       "@react-native-google-signin/google-signin",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Kampüs haritasında konumunuzu görmek için konum izni gerekiyor."
+        }
+      ],
       [
         "expo-build-properties",
         {

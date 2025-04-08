@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Platform, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, StatusBar, SafeAreaView, Alert } from 'react-native';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 
 // Sabancı Üniversitesi kampüs koordinatları
@@ -41,63 +41,93 @@ const CAMPUS_BUILDINGS = [
     id: 'b1',
     name: 'FENS - Mühendislik ve Doğa Bilimleri Fakültesi',
     description: 'Mühendislik ve Doğa Bilimleri Fakültesi Binası',
-    latitude: 40.8915,
-    longitude: 29.3790,
+    latitude: 40.890899934394774,
+    longitude: 29.379077584764005,
     color: '#e67e22'
   },
   {
     id: 'b2',
     name: 'FASS - Sanat ve Sosyal Bilimler Fakültesi',
     description: 'Sanat ve Sosyal Bilimler Fakültesi Binası',
-    latitude: 40.8908, 
-    longitude: 29.3790,
+    latitude: 40.89029975146207, 
+    longitude: 29.37818709138422,
     color: '#3498db'
   },
   {
     id: 'b3',
     name: 'FMAN - Yönetim Bilimleri Fakültesi',
     description: 'Yönetim Bilimleri Fakültesi Binası',
-    latitude: 40.8921,
-    longitude: 29.3797,
+    latitude: 40.89219760861098,
+    longitude: 29.378466041117647,
     color: '#9b59b6'
   },
   {
     id: 'b4',
     name: 'IC - Bilgi Merkezi',
     description: 'Kütüphane ve Bilgi Merkezi',
-    latitude: 40.8903,
-    longitude: 29.3772,
+    latitude: 40.8903078620785,
+    longitude: 29.37729659800444,
     color: '#2ecc71'
   },
   {
     id: 'b5',
     name: 'UC - Üniversite Merkezi',
     description: 'Yeme/İçme Alanları, Dükkanlar ve Etkinlik Alanları',
-    latitude: 40.8919,
-    longitude: 29.3797,
+    latitude: 40.891910606212654,
+    longitude: 29.37977947507857,
     color: '#e74c3c'
   },
   {
     id: 'b6',
     name: 'Yurtlar',
     description: 'Öğrenci Yurtları',
-    latitude: 40.8923,
-    longitude: 29.3819,
+    latitude: 40.8923987972233,
+    longitude: 29.38197984710079,
     color: '#f1c40f'
+  },
+  {
+    id: 'b7',
+    name: 'Gösteri Merkezi',
+    description: 'Performans Sanatları ve Etkinlik Merkezi',
+    latitude: 40.89266872585152,
+    longitude: 29.375200811570764,
+    color: '#8e44ad'
   }
 ];
 
-export default function CampusMap() {
+export default function FullCampusMap() {
   const router = useRouter();
   const [locationPermission, setLocationPermission] = useState(false);
   const [showServicePoints, setShowServicePoints] = useState(true);
   const [showBuildings, setShowBuildings] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'food' | 'service' | 'shop'>('all');
+
+  // Servis noktalarını kategorilere ayırma
+  const categories: Record<'all' | 'food' | 'service' | 'shop', string> = {
+    all: 'Tümü',
+    food: 'Yeme-İçme',
+    service: 'Hizmetler',
+    shop: 'Alışveriş'
+  };
+
+  // Kategorilere göre filtreleme
+  const getCategoryPoints = () => {
+    if (selectedCategory === 'all') return SERVICE_POINTS;
+    
+    const categoryMapping: Record<'food' | 'service' | 'shop', string[]> = {
+      food: ['Akkol', 'Coffy', 'EspressoLab', 'Fasshane', 'Köpüklü Kahve', 'Küçük Ev', 'Piazza', 'Pizzabulls', 'Simit Sarayı', 'Starbucks', 'Subway'],
+      service: ['Akbank', 'Copy Center', 'Era Kuaför', 'Haberleşme Merkezi', 'Sağlık Merkezi'],
+      shop: ['Suclub', 'Şok Market']
+    };
+    
+    return SERVICE_POINTS.filter(point => 
+      categoryMapping[selectedCategory].includes(point.name)
+    );
+  };
 
   useEffect(() => {
     (async () => {
       try {
-        setLoading(true);
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
           Alert.alert(
@@ -106,54 +136,65 @@ export default function CampusMap() {
             [{ text: 'Tamam' }]
           );
           setLocationPermission(false);
-        } else {
-          setLocationPermission(true);
+          return;
         }
+        
+        setLocationPermission(true);
       } catch (err) {
         console.error("Konum izni hatası:", err);
         setLocationPermission(false);
-      } finally {
-        setLoading(false);
       }
     })();
   }, []);
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#002B5C" />
-        <Text style={styles.loadingText}>Harita yükleniyor...</Text>
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container}>
-      <View style={styles.mapContainer}>
-        <Text style={styles.mapTitle}>Kampüs Haritası</Text>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#002B5C" />
+          <Text style={styles.backButtonText}>Geri</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Kampüs Haritası</Text>
+      </View>
+      
+      <View style={styles.filterContainer}>
+        <TouchableOpacity 
+          style={[styles.filterButton, showServicePoints && styles.filterButtonActive]}
+          onPress={() => setShowServicePoints(!showServicePoints)}
+        >
+          <Text style={[styles.filterButtonText, showServicePoints && styles.filterButtonTextActive]}>Hizmetler</Text>
+        </TouchableOpacity>
         
-        <View style={styles.filterContainer}>
-          <TouchableOpacity 
-            style={[styles.filterButton, showServicePoints && styles.filterButtonActive]}
-            onPress={() => setShowServicePoints(!showServicePoints)}
-          >
-            <Text style={[styles.filterButtonText, showServicePoints && styles.filterButtonTextActive]}>Hizmetler</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.filterButton, showBuildings && styles.filterButtonActive]}
-            onPress={() => setShowBuildings(!showBuildings)}
-          >
-            <Text style={[styles.filterButtonText, showBuildings && styles.filterButtonTextActive]}>Binalar</Text>
-          </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.filterButton, showBuildings && styles.filterButtonActive]}
+          onPress={() => setShowBuildings(!showBuildings)}
+        >
+          <Text style={[styles.filterButtonText, showBuildings && styles.filterButtonTextActive]}>Binalar</Text>
+        </TouchableOpacity>
+      </View>
+      
+      {showServicePoints && (
+        <View style={styles.categoryContainer}>
+          {Object.entries(categories).map(([key, label]) => (
+            <TouchableOpacity 
+              key={key}
+              style={[styles.categoryButton, selectedCategory === key && styles.categoryButtonActive]}
+              onPress={() => setSelectedCategory(key as 'all' | 'food' | 'service' | 'shop')}
+            >
+              <Text style={[styles.categoryButtonText, selectedCategory === key && styles.categoryButtonTextActive]}>
+                {label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
-        
+      )}
+      
+      <View style={styles.mapContainer}>
         <MapView
           style={styles.map}
           initialRegion={CAMPUS_COORDINATES}
           showsUserLocation={locationPermission}
-          scrollEnabled={true}
-          zoomEnabled={true}
         >
           {/* Kampüs merkez marker */}
           <Marker
@@ -166,7 +207,7 @@ export default function CampusMap() {
           />
 
           {/* Hizmet noktaları için marker'lar */}
-          {showServicePoints && SERVICE_POINTS.map((point) => (
+          {showServicePoints && getCategoryPoints().map((point) => (
             <Marker
               key={point.id}
               coordinate={{
@@ -205,53 +246,57 @@ export default function CampusMap() {
             </Marker>
           ))}
         </MapView>
-        
-        <View style={styles.overlay}>
-          <TouchableOpacity 
-            style={styles.expandButton}
-            onPress={() => router.push('/screens/MapView')}
-          >
-            <Text style={styles.expandButtonText}>Büyüt</Text>
-          </TouchableOpacity>
-        </View>
       </View>
-    </View>
+      
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>
+          Haritada gezinmek için parmağınızı kaydırın, yakınlaştırmak için iki parmağınızı kullanın
+        </Text>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
-    height: 280,
-    backgroundColor: '#f5f5f5',
-    marginBottom: 20,
-  },
-  mapContainer: {
     flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    margin: 10,
-    overflow: 'hidden',
-    position: 'relative',
+    backgroundColor: '#f5f5f5',
   },
-  mapTitle: {
-    fontSize: 20,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#002B5C',
+    marginLeft: 4,
+  },
+  headerTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#002B5C',
-    margin: 10,
-    marginLeft: 15,
   },
   filterContainer: {
     flexDirection: 'row',
-    marginHorizontal: 15,
-    marginBottom: 10,
-    zIndex: 1,
+    padding: 10,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
   },
   filterButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 10,
     backgroundColor: '#f1f1f1',
     borderWidth: 1,
     borderColor: '#ddd',
@@ -261,33 +306,48 @@ const styles = StyleSheet.create({
     borderColor: '#002B5C',
   },
   filterButtonText: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#666',
   },
   filterButtonTextActive: {
     color: '#fff',
     fontWeight: 'bold',
   },
+  categoryContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 10,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  categoryButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    margin: 4,
+    backgroundColor: '#f5f5f5',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  categoryButtonActive: {
+    backgroundColor: '#002B5C',
+    borderColor: '#002B5C',
+  },
+  categoryButtonText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  categoryButtonTextActive: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  mapContainer: {
+    flex: 1,
+  },
   map: {
     width: '100%',
     height: '100%',
-    flex: 1,
-  },
-  overlay: {
-    position: 'absolute',
-    bottom: 10,
-    right: 10,
-  },
-  expandButton: {
-    backgroundColor: '#002B5C',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 5,
-  },
-  expandButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 14,
   },
   calloutContainer: {
     width: 200,
@@ -301,16 +361,15 @@ const styles = StyleSheet.create({
   calloutDescription: {
     fontSize: 12,
   },
-  loadingContainer: {
-    width: '100%',
-    height: 250,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
+  footer: {
+    padding: 12,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
   },
-  loadingText: {
-    marginTop: 10,
-    color: '#002B5C',
+  footerText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
   },
 }); 

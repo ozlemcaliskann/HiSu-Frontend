@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "792408514806",
+    "project_id": "hisu-a8493",
+    "storage_bucket": "hisu-a8493.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:792408514806:android:82ad3d3fbad419b3740cd7",
+        "android_client_info": {
+          "package_name": "com.hisu.hisuapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBpTHvSKUzEiTbMW_EbcChHvXrNAIA4E3c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+} 

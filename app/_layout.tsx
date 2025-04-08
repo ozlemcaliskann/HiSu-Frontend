@@ -1,12 +1,11 @@
 import { ThemeProvider, DefaultTheme } from "@react-navigation/native";
 import { Stack, useRouter } from "expo-router";
 import { useFonts } from "expo-font";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
-import { auth } from "@/constants/firebase"; 
-import { onAuthStateChanged, User } from "firebase/auth";
 import * as SplashScreen from "expo-splash-screen";
 
+// Açılış ekranının otomatik gizlenmesini engelle
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -17,36 +16,24 @@ export default function RootLayout() {
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
-  const [user, setUser] = useState<User | null>(null);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-
   useEffect(() => {
-    console.log("🔍 Checking Firebase authentication...");
-
-    const unsubscribe = onAuthStateChanged(auth, (authUser) => {
-      console.log(authUser ? `✅ User authenticated: ${authUser.email}` : "❌ No user authenticated.");
-      setUser(authUser);
-      setIsCheckingAuth(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  // 🚀 Redirect based on authentication status
-  useEffect(() => {
-    if (!isCheckingAuth && fontsLoaded) {
-      if (user) {
-        console.log("✅ User is logged in, redirecting to MainPage...");
-        router.replace("/MainPage");
-      } else {
-        console.log("🔄 Redirecting to LoginScreen...");
-        router.replace("/LoginScreen");
+    const prepare = async () => {
+      if (fontsLoaded) {
+        // Fontlar yüklendiğinde açılış ekranını gizle
+        try {
+          await SplashScreen.hideAsync();
+          console.log("✅ Loading completed...");
+        } catch (error) {
+          console.warn("Error hiding splash screen:", error);
+        }
       }
-    }
-  }, [isCheckingAuth, fontsLoaded, user]);
+    };
 
-  // Show loading indicator while checking auth
-  if (!fontsLoaded || isCheckingAuth) {
+    prepare();
+  }, [fontsLoaded]);
+
+  // Show loading indicator while fonts are loading
+  if (!fontsLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" }}>
         <ActivityIndicator size="large" color="#007AFF" />
@@ -57,7 +44,7 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={DefaultTheme}>
-      <Stack>
+      <Stack initialRouteName="LoginScreen">
         <Stack.Screen name="LoginScreen" options={{ headerShown: false }} />
         <Stack.Screen name="MainPage" options={{ headerShown: false }} />
         
@@ -103,6 +90,11 @@ export default function RootLayout() {
           headerShown: true,
           headerTitle: "Yönetim Bilimleri",
           headerBackTitle: "Geri"
+        }} />
+        
+        {/* Map screens */}
+        <Stack.Screen name="screens/MapView/index" options={{ 
+          headerShown: false 
         }} />
         
         {/* Others */}

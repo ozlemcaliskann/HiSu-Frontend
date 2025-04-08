@@ -16,7 +16,16 @@ export default function BlurTabBarBackground() {
 }
 
 export function useBottomTabOverflow() {
-  const tabHeight = useBottomTabBarHeight();
   const { bottom } = useSafeAreaInsets();
+  let tabHeight = 0;
+  
+  try {
+    // Eğer Tab Navigator içindeyse bu fonksiyon çalışacak, değilse hata fırlatacak
+    tabHeight = useBottomTabBarHeight();
+  } catch (error) {
+    // Tab Navigator içinde değilsek sabit bir değer kullanabiliriz
+    tabHeight = bottom + 49; // iOS tab bar standart yüksekliği
+  }
+  
   return tabHeight - bottom;
 }

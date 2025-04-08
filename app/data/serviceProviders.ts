@@ -248,4 +248,7 @@ export const serviceProviders: ServiceProvider[] = [
     hasComments: true,
     comments: []
   }
-]; 
+];
+
+// Export default for expo-router
+export default serviceProviders; 
