@@ -1,28 +1,32 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, getDocs } from 'firebase/firestore';
 
-// Sample instructor data for FENS with image URLs
-const FENS_INSTRUCTORS = [
-  {
-    id: 1,
-    name: "Ahmet Demirelli",
-    image: "https://randomuser.me/api/portraits/men/44.jpg", // Professional woman with folder
-  },
-  {
-    id: 2,
-    name: "Albert Levi",
-    image: "https://randomuser.me/api/portraits/men/68.jpg", // Another professional woman
-  },
-];
+// Firebase configuration - replace with your own config
+const firebaseConfig = {
+  apiKey: "AIzaSyBpTHvSKUzEiTbMW_EbcChHvXrNAIA4E3c",
+  authDomain: "hisu-a8493.firebaseapp.com",
+  projectId: "hisu-a8493",
+  storageBucket: "hisu-a8493.firebasestorage.app",
+  messagingSenderId: "792408514806",
+  appId: "1:792408514806:web:82ad3d3fbad419b3740cd7"
+};
 
-// Instructor Component
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Instructor Component - updated to match your Firebase structure
 interface InstructorCardProps {
   name: string;
   image: string;
+  title: string;
+  email: string;
+  field: string;
 }
-
-const InstructorCard: React.FC<InstructorCardProps> = ({ name, image }) => {
+const InstructorCard: React.FC<InstructorCardProps> = ({ name, image, title, email, field }) => {
   return (
     <View style={styles.instructorContainer}>
       <Image 
@@ -35,10 +39,10 @@ const InstructorCard: React.FC<InstructorCardProps> = ({ name, image }) => {
           <Text style={styles.instructorButtonText}>{name}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.instructorButton}>
-          <Text style={styles.instructorButtonText}>Office info</Text>
+          <Text style={styles.instructorButtonText}>{field || "Specialization"}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.instructorButton}>
-          <Text style={styles.instructorButtonText}>mail</Text>
+          <Text style={styles.instructorButtonText}>{email}</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.divider} />
@@ -46,8 +50,49 @@ const InstructorCard: React.FC<InstructorCardProps> = ({ name, image }) => {
   );
 };
 
-// FENS Screen Component
+// FENS Screen Component updated for the Firebase structure
+interface Teacher {
+  id: string;
+  name?: string;
+  imageUrl?: string;
+  title?: string;
+  email?: string;
+  field?: string;
+  faculty?: string;
+}
+
 const FENSScreen = () => {
+  const [instructors, setInstructors] = useState<Teacher[]>([]);
+  const [instructorCount, setInstructorCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const fetchInstructors = async () => {
+      try {
+        // Get data from the "teachers" collection
+        const teachersCollection = collection(db, "teachers");
+        const teachersSnapshot = await getDocs(teachersCollection);
+        const teachersList = teachersSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Teacher[];
+        
+        // Filter for FENS faculty if needed
+        const fensFaculty = teachersList.filter(teacher => 
+          teacher.faculty === "Engineering and Natural Sciences"
+        );
+        
+        setInstructors(fensFaculty);
+        setInstructorCount(fensFaculty.length);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching teachers: ", error);
+        setLoading(false);
+      }
+    };
+
+    fetchInstructors();
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
@@ -70,27 +115,37 @@ const FENSScreen = () => {
 
         <View style={styles.instructorsSection}>
           <Text style={styles.sectionTitle}>Instructors</Text>
-          {FENS_INSTRUCTORS.map((instructor) => (
-            <InstructorCard 
-              key={instructor.id} 
-              name={instructor.name} 
-              image={instructor.image} 
-            />
-          ))}
-          <TouchableOpacity style={styles.instructorCountButton}>
-            <Text style={styles.instructorCountText}>
-              160 instructors
-            </Text>
-          </TouchableOpacity>
+          
+          {loading ? (
+            <ActivityIndicator size="large" color="#002D72" />
+          ) : (
+            <>
+              {instructors.map((instructor) => (
+                <InstructorCard 
+                  key={instructor.id} 
+                  name={instructor.name || "Unknown Name"}
+                  image={instructor.imageUrl || 'https://via.placeholder.com/120'}
+                  title={instructor.title || "Faculty Member"}
+                  email={instructor.email || "No email available"}
+                  field={instructor.field || "No field information"}
+                />
+              ))}
+
+              <TouchableOpacity style={styles.instructorCountButton}>
+                <Text style={styles.instructorCountText}>
+                  {instructorCount} instructors
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </ScrollView>
-      
-      {/* Progress Bar removed */}
       
       <StatusBar style="auto" />
     </SafeAreaView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

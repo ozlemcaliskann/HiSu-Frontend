@@ -1,28 +1,32 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, getDocs } from 'firebase/firestore';
 
-// Sample instructor data for FMAN with image URLs
-const FMAN_INSTRUCTORS = [
-  {
-    id: 1,
-    name: "Serkan Kaplan",
-    image: "https://randomuser.me/api/portraits/men/33.jpg", // Professional woman with folder
-  },
-  {
-    id: 2,
-    name: "Ayşe Yılmaz",
-    image: "https://randomuser.me/api/portraits/women/54.jpg", // Another professional woman
-  },
-];
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBpTHvSKUzEiTbMW_EbcChHvXrNAIA4E3c",
+  authDomain: "hisu-a8493.firebaseapp.com",
+  projectId: "hisu-a8493",
+  storageBucket: "hisu-a8493.firebasestorage.app",
+  messagingSenderId: "792408514806",
+  appId: "1:792408514806:web:82ad3d3fbad419b3740cd7"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 // Instructor Component
 interface InstructorCardProps {
   name: string;
   image: string;
+  field: string;
+  email: string;
 }
 
-const InstructorCard: React.FC<InstructorCardProps> = ({ name, image }) => {
+const InstructorCard: React.FC<InstructorCardProps> = ({ name, image, field, email }) => {
   return (
     <View style={styles.instructorContainer}>
       <Image 
@@ -35,10 +39,10 @@ const InstructorCard: React.FC<InstructorCardProps> = ({ name, image }) => {
           <Text style={styles.instructorButtonText}>{name}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.instructorButton}>
-          <Text style={styles.instructorButtonText}>Office info</Text>
+          <Text style={styles.instructorButtonText}>{field || "Specialization"}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.instructorButton}>
-          <Text style={styles.instructorButtonText}>mail</Text>
+          <Text style={styles.instructorButtonText}>{email}</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.divider} />
@@ -46,8 +50,51 @@ const InstructorCard: React.FC<InstructorCardProps> = ({ name, image }) => {
   );
 };
 
+// Type for Teacher data
+interface Teacher {
+  id: string;
+  name?: string;
+  imageUrl?: string;
+  title?: string;
+  email?: string;
+  field?: string;
+  faculty?: string;
+}
+
 // FMAN Screen Component
 const FMANScreen = () => {
+  const [instructors, setInstructors] = useState<Teacher[]>([]);
+  const [instructorCount, setInstructorCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchInstructors = async () => {
+      try {
+        // Get data from the "teachers" collection
+        const teachersCollection = collection(db, "teachers");
+        const teachersSnapshot = await getDocs(teachersCollection);
+        const teachersList = teachersSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Teacher[];
+        
+        // Filter for SBS faculty (which is the same as FMAN)
+        const sbsFaculty = teachersList.filter(teacher => 
+          teacher.faculty === "Sabancı Business School"
+        );
+        
+        setInstructors(sbsFaculty);
+        setInstructorCount(sbsFaculty.length);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching teachers: ", error);
+        setLoading(false);
+      }
+    };
+
+    fetchInstructors();
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
@@ -70,22 +117,29 @@ const FMANScreen = () => {
 
         <View style={styles.instructorsSection}>
           <Text style={styles.sectionTitle}>Instructors</Text>
-          {FMAN_INSTRUCTORS.map((instructor) => (
-            <InstructorCard 
-              key={instructor.id} 
-              name={instructor.name} 
-              image={instructor.image} 
-            />
-          ))}
-          <TouchableOpacity style={styles.instructorCountButton}>
-            <Text style={styles.instructorCountText}>
-              90 instructors
-            </Text>
-          </TouchableOpacity>
+          
+          {loading ? (
+            <ActivityIndicator size="large" color="#27AE60" />
+          ) : (
+            <>
+              {instructors.map((instructor) => (
+                <InstructorCard 
+                  key={instructor.id} 
+                  name={instructor.name || "Unknown Name"}
+                  image={instructor.imageUrl || 'https://via.placeholder.com/120'}
+                  field={instructor.field || "No field information"}
+                  email={instructor.email || "No email available"}
+                />
+              ))}
+              <TouchableOpacity style={styles.instructorCountButton}>
+                <Text style={styles.instructorCountText}>
+                  {instructorCount} instructors
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </ScrollView>
-      
-      {/* Progress Bar removed */}
       
       <StatusBar style="auto" />
     </SafeAreaView>
@@ -177,31 +231,7 @@ const styles = StyleSheet.create({
   instructorCountText: {
     fontSize: 16,
     color: '#333',
-  },
-  progressBarContainer: {
-    position: 'absolute',
-    right: 20,
-    top: 200,
-    bottom: 200,
-    width: 20,
-    justifyContent: 'center',
-  },
-  progressBar: {
-    width: 20,
-    height: '100%',
-    borderRadius: 10,
-    backgroundColor: '#27AE60', // Green for FMAN
-    position: 'relative',
-  },
-  progressIndicator: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#002D72',
-    position: 'absolute',
-    top: '50%',
-    left: -10,
-  },
+  }
 });
 
 export default FMANScreen;

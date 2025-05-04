@@ -34,7 +34,8 @@ const LoginScreen = () => {
     expoClientId: "792408514806-kh0h7ce8et2hss0vsl92jq5ohknh4f59.apps.googleusercontent.com",
     iosClientId: "792408514806-q7ufn8ugiqa9gr2v8sqm01gsuobs0vlm.apps.googleusercontent.com",
     webClientId: "792408514806-871vjikmhseqsuquuqr6hignmdiqgc4i.apps.googleusercontent.com",
-    redirectUri: makeRedirectUri({ useProxy: true }),
+    androidClientId:"792408514806-puq53o6tvmifh8mpnimma4bqde7v4cod.apps.googleusercontent.com",
+    redirectUri: makeRedirectUri({ useProxy: true })
   });
 
   useEffect(() => {
