@@ -1,37 +1,44 @@
-// Mock Firebase implementation to avoid loading errors
-const app = { name: 'mock-firebase-app' };
+// Replace the mock implementation with actual Firebase initialization
+import { initializeApp } from 'firebase/app';
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithCredential,
+  signInWithEmailAndPassword,
+  onAuthStateChanged as firebaseOnAuthStateChanged,
+  signOut as firebaseSignOut
+} from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
-// Define a User type for type checking
-type User = {
-  email?: string | null;
-  displayName?: string | null;
-  uid?: string;
+// Your Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBpTHvSKUzEiTbMW_EbcChHvXrNAIA4E3c",
+  authDomain: "hisu-a8493.firebaseapp.com",
+  projectId: "hisu-a8493",
+  storageBucket: "hisu-a8493.firebasestorage.app",
+  messagingSenderId: "792408514806",
+  appId: "1:792408514806:web:82ad3d3fbad419b3740cd7"
 };
 
-// Type for the onAuthStateChanged callback
-type AuthStateCallback = (user: User | null) => void;
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
-// Mock auth object
-const auth = {
-  currentUser: null,
-  onAuthStateChanged: (callback: AuthStateCallback) => {
-    // Simulate no user is logged in
-    callback(null);
-    // Return mock unsubscribe function
-    return () => {};
-  },
-  signOut: () => Promise.resolve()
+// Initialize Firebase Authentication
+const auth = getAuth(app);
+
+// Initialize Firestore
+const db = getFirestore(app);
+
+// Create a Google provider instance
+const provider = new GoogleAuthProvider();
+
+// Export all the Firebase modules and functions
+export { 
+  auth, 
+  provider, 
+  signInWithCredential, 
+  signInWithEmailAndPassword,
+  firebaseOnAuthStateChanged as onAuthStateChanged, 
+  firebaseSignOut as signOut,
+  db 
 };
-
-// Mock provider
-const provider = { providerId: 'google.com' };
-
-// Mock Firestore DB
-const db = { collection: () => ({ get: () => Promise.resolve({ docs: [] }) }) };
-
-// Mock functions
-const signInWithCredential = () => Promise.resolve({ user: null });
-const onAuthStateChanged = auth.onAuthStateChanged;
-const signOut = auth.signOut;
-
-export { auth, provider, signInWithCredential, signOut, db, onAuthStateChanged };
