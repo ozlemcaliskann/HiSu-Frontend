@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useMemo, memo } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Platform, Alert, ActivityIndicator } from 'react-native';
-import MapView, { Marker, Callout } from 'react-native-maps';
+import MapView, { Marker, Callout, PROVIDER_DEFAULT, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import * as Location from 'expo-location';
@@ -87,12 +87,95 @@ const CAMPUS_BUILDINGS = [
   }
 ];
 
-export default function CampusMap() {
+// Marker bileşenleri için prop tipleri
+interface ServiceMarkerProps {
+  point: {
+    id: string;
+    name: string;
+    latitude: number;
+    longitude: number;
+    color: string;
+    description: string;
+  }
+}
+
+interface BuildingMarkerProps {
+  building: {
+    id: string;
+    name: string;
+    description: string;
+    latitude: number;
+    longitude: number;
+    color: string;
+  }
+}
+
+// Performans için memoize edilen marker bileşenleri
+const ServiceMarker = memo(({ point }: ServiceMarkerProps) => (
+  <Marker
+    key={point.id}
+    coordinate={{
+      latitude: point.latitude,
+      longitude: point.longitude,
+    }}
+    title={point.name}
+    description={point.description}
+    tracksViewChanges={false}
+  >
+    <Callout>
+      <View style={styles.calloutContainer}>
+        <Text style={styles.calloutTitle}>{point.name}</Text>
+        <Text style={styles.calloutDescription}>{point.description}</Text>
+      </View>
+    </Callout>
+  </Marker>
+));
+
+// Performans için memoize edilen bina marker bileşeni
+const BuildingMarker = memo(({ building }: BuildingMarkerProps) => (
+  <Marker
+    key={building.id}
+    coordinate={{
+      latitude: building.latitude,
+      longitude: building.longitude,
+    }}
+    title={building.name}
+    description={building.description}
+    tracksViewChanges={false}
+  >
+    <Callout>
+      <View style={styles.calloutContainer}>
+        <Text style={styles.calloutTitle}>{building.name}</Text>
+        <Text style={styles.calloutDescription}>{building.description}</Text>
+      </View>
+    </Callout>
+  </Marker>
+));
+
+function CampusMap() {
   const router = useRouter();
   const [locationPermission, setLocationPermission] = useState(false);
   const [showServicePoints, setShowServicePoints] = useState(true);
   const [showBuildings, setShowBuildings] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState(false);
+  const mapRef = useRef(null);
+
+  // Platform spesifik provider seçimi
+  const mapProvider = Platform.OS === 'android' ? PROVIDER_GOOGLE : PROVIDER_DEFAULT;
+
+  // C++ exception'larını azaltmak için harita yüklenirken timeout
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!mapReady) {
+        console.warn('Map loading timeout, forcing ready state');
+        setLoading(false);
+      }
+    }, 5000); // 5 saniye timeout
+
+    return () => clearTimeout(timer);
+  }, [mapReady]);
 
   useEffect(() => {
     (async () => {
@@ -100,29 +183,80 @@ export default function CampusMap() {
         setLoading(true);
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-          Alert.alert(
-            'Konum İzni Gerekli',
-            'Konumunuzu haritada göstermek için izin vermeniz gerekmektedir.',
-            [{ text: 'Tamam' }]
-          );
+          console.log('Konum izni verilmedi');
           setLocationPermission(false);
         } else {
+          console.log('Konum izni alındı');
           setLocationPermission(true);
         }
       } catch (err) {
         console.error("Konum izni hatası:", err);
         setLocationPermission(false);
       } finally {
+        // Konum izni sonucu ne olursa olsun haritayı göstermeye devam et
         setLoading(false);
       }
     })();
+
+    // Cleanup için
+    return () => {
+      if (mapRef.current) {
+        // Native RCT thread çakışmalarını önlemek için temizleme işlemi 
+        console.log('Cleaning up map resources');
+        mapRef.current = null;
+      }
+    };
   }, []);
+
+  // Performans için memoize edilmiş marker listeleri
+  const serviceMarkers = useMemo(() => {
+    return showServicePoints ? SERVICE_POINTS.map(point => (
+      <ServiceMarker key={point.id} point={point} />
+    )) : [];
+  }, [showServicePoints]);
+
+  const buildingMarkers = useMemo(() => {
+    return showBuildings ? CAMPUS_BUILDINGS.map(building => (
+      <BuildingMarker key={building.id} building={building} />
+    )) : [];
+  }, [showBuildings]);
+
+  // Harita hata ayıklama fonksiyonları
+  const handleMapError = (error: Error) => {
+    console.error('Map error:', error);
+    setMapError(true);
+    setLoading(false);
+  };
+
+  const handleMapReady = () => {
+    console.log('Map is ready');
+    setMapReady(true);
+    setLoading(false);
+  };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#002B5C" />
         <Text style={styles.loadingText}>Harita yükleniyor...</Text>
+      </View>
+    );
+  }
+
+  if (mapError) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Harita yüklenirken bir sorun oluştu</Text>
+        <TouchableOpacity 
+          style={styles.retryButton}
+          onPress={() => {
+            setMapError(false);
+            setLoading(true);
+            setTimeout(() => setLoading(false), 1000);
+          }}
+        >
+          <Text style={styles.retryButtonText}>Tekrar Dene</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -149,11 +283,20 @@ export default function CampusMap() {
         </View>
         
         <MapView
+          ref={mapRef}
           style={styles.map}
+          provider={mapProvider}
           initialRegion={CAMPUS_COORDINATES}
           showsUserLocation={locationPermission}
           scrollEnabled={true}
           zoomEnabled={true}
+          maxZoomLevel={18}
+          minZoomLevel={14}
+          rotateEnabled={false}
+          loadingEnabled={true}
+          loadingIndicatorColor="#002B5C"
+          loadingBackgroundColor="#f5f5f5"
+          onMapReady={handleMapReady}
         >
           {/* Kampüs merkez marker */}
           <Marker
@@ -163,56 +306,20 @@ export default function CampusMap() {
             }}
             title="Sabancı Üniversitesi"
             description="Ana Kampüs"
+            tracksViewChanges={false}
           />
 
-          {/* Hizmet noktaları için marker'lar */}
-          {showServicePoints && SERVICE_POINTS.map((point) => (
-            <Marker
-              key={point.id}
-              coordinate={{
-                latitude: point.latitude,
-                longitude: point.longitude,
-              }}
-              title={point.name}
-              description={point.description}
-            >
-              <Callout>
-                <View style={styles.calloutContainer}>
-                  <Text style={styles.calloutTitle}>{point.name}</Text>
-                  <Text style={styles.calloutDescription}>{point.description}</Text>
-                </View>
-              </Callout>
-            </Marker>
-          ))}
-          
-          {/* Fakülteler ve binalar için marker'lar */}
-          {showBuildings && CAMPUS_BUILDINGS.map((building) => (
-            <Marker
-              key={building.id}
-              coordinate={{
-                latitude: building.latitude,
-                longitude: building.longitude,
-              }}
-              title={building.name}
-              description={building.description}
-            >
-              <Callout>
-                <View style={styles.calloutContainer}>
-                  <Text style={styles.calloutTitle}>{building.name}</Text>
-                  <Text style={styles.calloutDescription}>{building.description}</Text>
-                </View>
-              </Callout>
-            </Marker>
-          ))}
+          {/* Hizmet noktaları ve binalar için optimized markerlar */}
+          {serviceMarkers}
+          {buildingMarkers}
         </MapView>
         
         <View style={styles.overlay}>
-          <TouchableOpacity 
-            style={styles.expandButton}
-            onPress={() => router.push('/screens/MapView')}
-          >
-            <Text style={styles.expandButtonText}>Büyüt</Text>
-          </TouchableOpacity>
+          <Link href="/map" asChild>
+            <TouchableOpacity style={styles.expandButton}>
+              <Text style={styles.expandButtonText}>Büyüt</Text>
+            </TouchableOpacity>
+          </Link>
         </View>
       </View>
     </View>
@@ -250,48 +357,44 @@ const styles = StyleSheet.create({
   filterButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
+    borderRadius: 15,
+    marginRight: 10,
     backgroundColor: '#f1f1f1',
-    borderWidth: 1,
-    borderColor: '#ddd',
   },
   filterButtonActive: {
     backgroundColor: '#002B5C',
-    borderColor: '#002B5C',
   },
   filterButtonText: {
-    fontSize: 12,
     color: '#666',
+    fontSize: 14,
   },
   filterButtonTextActive: {
     color: '#fff',
-    fontWeight: 'bold',
   },
   map: {
     width: '100%',
-    height: '100%',
     flex: 1,
   },
   overlay: {
     position: 'absolute',
     bottom: 10,
     right: 10,
+    backgroundColor: 'transparent',
   },
   expandButton: {
     backgroundColor: '#002B5C',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 5,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   expandButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: '#fff',
     fontSize: 14,
+    fontWeight: '500',
   },
   calloutContainer: {
-    width: 200,
-    padding: 10,
+    width: 180,
+    padding: 8,
   },
   calloutTitle: {
     fontWeight: 'bold',
@@ -300,17 +403,47 @@ const styles = StyleSheet.create({
   },
   calloutDescription: {
     fontSize: 12,
+    color: '#666',
   },
   loadingContainer: {
-    width: '100%',
-    height: 250,
+    width: '100%', 
+    height: 280,
+    backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
+    marginBottom: 20,
   },
   loadingText: {
     marginTop: 10,
     color: '#002B5C',
   },
-}); 
+  errorContainer: {
+    width: '100%',
+    height: 280,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderRadius: 12,
+    margin: 10,
+  },
+  errorText: {
+    marginBottom: 15,
+    color: '#e74c3c',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#002B5C',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontWeight: '500',
+  }
+});
+
+// Performans için memoize edilmiş komponent
+export default memo(CampusMap); 

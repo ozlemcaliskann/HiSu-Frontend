@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, ScrollView, Alert, Image, Platform, SafeAreaView, Animated, Modal } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, ScrollView, Alert, Image, Platform, SafeAreaView, Animated, Modal, TextInput, Button } from 'react-native';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { auth } from "@/constants/firebase";
 import CampusMap from './components/CampusMap';
+import useComments, { Comment } from './hooks/useComments';
 
 interface Location {
   id: string;
@@ -372,29 +373,61 @@ export default function MainPage() {
       </TouchableOpacity>
     </SafeAreaView>
   );
+  const CommentsModal: React.FC = () => {
+    const { comments, add, remove } = useComments(selectedLocation?.id ?? '');
+    const [text, setText] = useState('');
 
-  const CommentsModal = () => (
-    <Modal
-      visible={isCommentsModalVisible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={() => setIsCommentsModalVisible(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{selectedLocation?.name} - Yorumlar</Text>
-            <TouchableOpacity onPress={() => setIsCommentsModalVisible(false)}>
-              <Ionicons name="close" size={24} color="#333" />
-            </TouchableOpacity>
+    return (
+      <Modal
+        visible={isCommentsModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsCommentsModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {selectedLocation?.name} – Yorumlar
+              </Text>
+              <TouchableOpacity onPress={() => setIsCommentsModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.commentsList}>
+              {comments.length === 0 ? (
+                <Text style={styles.noCommentsText}>Henüz yorum yok.</Text>
+              ) : (
+                comments.map((c: Comment) => (
+                  <View key={c.id} style={styles.commentItem}>
+                    <Text style={styles.commentText}>{c.content}</Text>
+                    <TouchableOpacity onPress={() => remove(c.id)}>
+                      <Ionicons name="trash-outline" size={18} color="red" />
+                    </TouchableOpacity>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+
+            <TextInput
+              value={text}
+              onChangeText={setText}
+              placeholder="Yorum yaz..."
+              style={styles.input}
+            />
+            <Button
+              title="Gönder"
+              onPress={() => {
+                add(text);
+                setText('');
+              }}
+            />
           </View>
-          <ScrollView style={styles.commentsList}>
-            <Text style={styles.noCommentsText}>Henüz yorum yapılmamış.</Text>
-          </ScrollView>
         </View>
-      </View>
-    </Modal>
-  );
+      </Modal>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -723,34 +756,50 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
     width: '90%',
-    maxHeight: '80%',
-    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 12,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: 'bold',
   },
   commentsList: {
+    maxHeight: 200,
+    marginBottom: 12,
+  },
+  commentItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  commentText: {
     flex: 1,
+    fontSize: 14,
   },
   noCommentsText: {
     textAlign: 'center',
-    color: '#666',
-    marginTop: 20,
+    color: '#999',
+    marginVertical: 20,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+    padding: 8,
+    marginBottom: 10,
   },
 });

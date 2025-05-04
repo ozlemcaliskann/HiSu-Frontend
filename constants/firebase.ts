@@ -12,7 +12,11 @@ type User = {
 type AuthStateCallback = (user: User | null) => void;
 
 // Mock auth object
-const auth = {
+const auth: {
+  currentUser: User | null;
+  onAuthStateChanged: (callback: AuthStateCallback) => () => void;
+  signOut: () => Promise<void>;
+} = {
   currentUser: null,
   onAuthStateChanged: (callback: AuthStateCallback) => {
     // Simulate no user is logged in
