@@ -18,6 +18,7 @@ interface Comment {
   timestamp: string;
 }
 
+// Tüm servis sağlayıcıların tam listesi - backend bağlantısı olmazsa bura kullanılacak
 export const serviceProviders: ServiceProvider[] = [
   {
     id: '1',
@@ -27,7 +28,8 @@ export const serviceProviders: ServiceProvider[] = [
     location: 'Üniversite Merkezi',
     phone: '9472-3648-2031',
     hasComments: true,
-    comments: []
+    comments: [],
+    coordinates: { x: 40.8910633, y: 29.3800095 }
   },
   {
     id: '2',
@@ -38,7 +40,8 @@ export const serviceProviders: ServiceProvider[] = [
     location: 'Üniversite Merkezi',
     phone: '9461, 9449, 2042',
     hasComments: true,
-    comments: []
+    comments: [],
+    coordinates: { x: 40.8918737, y: 29.3796166 }
   },
   {
     id: '3',
@@ -49,7 +52,8 @@ export const serviceProviders: ServiceProvider[] = [
     location: 'Bilgi Merkezi',
     phone: '7879',
     hasComments: true,
-    comments: []
+    comments: [],
+    coordinates: { x: 40.8903156, y: 29.3773989 }
   },
   {
     id: '4',
@@ -60,7 +64,8 @@ export const serviceProviders: ServiceProvider[] = [
     location: 'Üniversite Merkezi',
     phone: '9460',
     hasComments: true,
-    comments: []
+    comments: [],
+    coordinates: { x: 40.8914187, y: 29.3798939 }
   },
   {
     id: '5',
@@ -71,7 +76,8 @@ export const serviceProviders: ServiceProvider[] = [
     location: 'Kampüs içi',
     phone: '4328-4335',
     hasComments: true,
-    comments: []
+    comments: [],
+    coordinates: { x: 40.8914583, y: 29.3814643 }
   },
   {
     id: '6',
@@ -82,7 +88,8 @@ export const serviceProviders: ServiceProvider[] = [
     location: 'Satınalma ve Destek Hizmetler',
     phone: '9913',
     hasComments: true,
-    comments: []
+    comments: [],
+    coordinates: { x: 40.8918512, y: 29.3829297 }
   },
   {
     id: '7',
@@ -93,32 +100,11 @@ export const serviceProviders: ServiceProvider[] = [
     location: 'Sanat ve Sosyal Bilimler Fakültesi',
     phone: '3090',
     hasComments: true,
-    comments: []
+    comments: [],
+    coordinates: { x: 40.8904792, y: 29.3785660 }
   },
   {
     id: '8',
-    name: 'Gift Shop',
-    likes: 0,
-    hours: '08:30-16:30',
-    weekendHours: 'Hafta sonu kapalı',
-    location: 'Üniversite Merkezi',
-    phone: '2050',
-    hasComments: true,
-    comments: []
-  },
-  {
-    id: '9',
-    name: 'Gürsel Turizm',
-    likes: 0,
-    hours: '08:30-23:00',
-    weekendHours: '08:30-23:00',
-    location: 'Shuttle Servis Alanı',
-    phone: '9492',
-    hasComments: true,
-    comments: []
-  },
-  {
-    id: '10',
     name: 'Haberleşme Merkezi',
     likes: 0,
     hours: '08:30-16:50',
@@ -126,21 +112,11 @@ export const serviceProviders: ServiceProvider[] = [
     location: 'Sosyal Hizmetler Binası (D2)',
     phone: '9915',
     hasComments: true,
-    comments: []
+    comments: [],
+    coordinates: { x: 40.8918701, y: 29.3825625 }
   },
   {
-    id: '11',
-    name: 'Homer Kitabevi - Kırtasiye',
-    likes: 0,
-    hours: '08:30-16:45',
-    weekendHours: 'Hafta sonu kapalı',
-    location: 'Üniversite Merkezi',
-    phone: '9467-9454',
-    hasComments: true,
-    comments: []
-  },
-  {
-    id: '12',
+    id: '9',
     name: 'Köpüklü Kahve',
     likes: 0,
     hours: '09:00-02:30',
@@ -148,10 +124,11 @@ export const serviceProviders: ServiceProvider[] = [
     location: 'Kampüs içi',
     phone: '9942',
     hasComments: true,
-    comments: []
+    comments: [],
+    coordinates: { x: 40.8917212, y: 29.3816610 }
   },
   {
-    id: '13',
+    id: '10',
     name: 'Küçük Ev',
     likes: 0,
     hours: '09:00-19:00',
@@ -159,10 +136,11 @@ export const serviceProviders: ServiceProvider[] = [
     location: 'Üniversite Merkezi',
     phone: '7585',
     hasComments: true,
-    comments: []
+    comments: [],
+    coordinates: { x: 40.8910446, y: 29.3802500 }
   },
   {
-    id: '14',
+    id: '11',
     name: 'Piazza Cafe',
     likes: 0,
     hours: '08:00-02:00',
@@ -170,20 +148,22 @@ export const serviceProviders: ServiceProvider[] = [
     location: 'Kampüs içi',
     phone: '0534 593 48 43',
     hasComments: true,
-    comments: []
+    comments: [],
+    coordinates: { x: 40.8919671, y: 29.3813932 }
   },
   {
-    id: '15',
+    id: '12',
     name: 'Pizzabulls',
     likes: 0,
     hours: '11:00-03:00',
     location: 'Shuttle Servis Alanı',
     phone: '7878',
     hasComments: true,
-    comments: []
+    comments: [],
+    coordinates: { x: 40.8887403, y: 29.3786923 }
   },
   {
-    id: '16',
+    id: '13',
     name: 'Suclub',
     likes: 0,
     hours: '09:00-16:00',
@@ -191,32 +171,35 @@ export const serviceProviders: ServiceProvider[] = [
     location: 'Üniversite Merkezi',
     phone: '2038',
     hasComments: true,
-    comments: []
+    comments: [],
+    coordinates: { x: 40.8914353, y: 29.3799357 }
   },
   {
-    id: '17',
-    name: 'Sağlık Merkezi',
-    likes: 0,
+    id: '14',
+    name: 'Kampüs Sağlık Merkezi',
+    likes: 2,
     hours: '08:45-18:00, 19:30-23:30',
-    weekendHours: 'Acil: 7/24',
+    weekendHours: 'Acil 7/24',
     location: 'Kampüs içi',
-    phone: '9923 (Acil: 6666)',
+    phone: '9923-Emergency 6666',
     hasComments: true,
-    comments: []
+    comments: [],
+    coordinates: { x: 40.8917984, y: 29.3827121 }
   },
   {
-    id: '18',
+    id: '15',
     name: 'Simit Sarayı',
     likes: 0,
     hours: '08:00-18:00',
     weekendHours: 'Kapalı',
     location: 'Mühendislik ve Doğa Bilimleri Fakültesi',
-    phone: '-',
+    phone: 'Belirtilmemiş',
     hasComments: true,
-    comments: []
+    comments: [],
+    coordinates: { x: 40.8906440, y: 29.3791800 }
   },
   {
-    id: '19',
+    id: '16',
     name: 'Starbucks',
     likes: 0,
     hours: '07:00-00:00',
@@ -224,27 +207,51 @@ export const serviceProviders: ServiceProvider[] = [
     location: 'Üniversite Merkezi',
     phone: '3759',
     hasComments: true,
-    comments: []
+    comments: [],
+    coordinates: { x: 40.8915388, y: 29.3800904 }
   },
   {
-    id: '20',
+    id: '17',
     name: 'Subway',
     likes: 0,
     hours: '11:00-23:00',
-    weekendHours: '11:00-23:00',
     location: 'Shuttle Servis Alanı',
     phone: '0216 568 76 76',
+    hasComments: true,
+    comments: [],
+    coordinates: { x: 40.8887930, y: 29.3787098 }
+  },
+  {
+    id: '18',
+    name: 'Şok Market',
+    likes: 0,
+    hours: '08:00-22:00',
+    weekendHours: '10:00-22:00',
+    location: 'Üniversite Merkezi',
+    phone: 'Belirtilmemiş',
+    hasComments: true,
+    comments: [],
+    coordinates: { x: 40.8920577, y: 29.3795941 }
+  },
+  {
+    id: '19',
+    name: 'SU Kütüphane',
+    likes: 2,
+    hours: '08:30-23:00',
+    weekendHours: '10:00-22:00',
+    location: 'Bilgi Merkezi',
+    phone: '9430-9431',
     hasComments: true,
     comments: []
   },
   {
-    id: '21',
-    name: 'Şok Market',
-    likes: 0,
+    id: '20',
+    name: 'Kampüs Spor Tesisleri',
+    likes: 2,
     hours: '08:00-22:00',
-    weekendHours: '08:00-22:00',
-    location: 'Üniversite Merkezi',
-    phone: '9477',
+    weekendHours: '10:00-20:00',
+    location: 'Spor Merkezi',
+    phone: '9450',
     hasComments: true,
     comments: []
   }
