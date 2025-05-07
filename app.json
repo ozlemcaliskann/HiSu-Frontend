@@ -11,7 +11,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hisu.hisuapp",
-      "googleServicesFile": "./ios/GoogleService-Info.plist",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "Kampüs haritasında konumunuzu görmek için konum izni gerekiyor.",
@@ -23,7 +22,6 @@
     },
     "android": {
       "package": "com.hisu.hisuapp",
-      "googleServicesFile": "./android/app/google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -51,9 +49,6 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "@react-native-firebase/app",
-      "@react-native-firebase/auth",
-      "@react-native-google-signin/google-signin",
       [
         "expo-location",
         {
